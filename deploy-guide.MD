@@ -1,22 +1,15 @@
 # Contract Deployment Guide:
 
-## Deploy/Verify StaticHelper
+## Deploy/Verify lfGlobalEscrow
 
-- Deploy StaticHelper
+- Deploy lfGlobalEscrow
 
 ```sh
 npx hardhat deploy-lf-global-escrow --network polygonmumbai 
 ```
 
-- Verify StaticHelper:
+- Verify lfGlobalEscrow:
 
 ```sh
-npx hardhat verify-staticshelper --network polygonmainnet
+npx hardhat verify-lf-global-escrow --network polygonmumbai
 ```
-
-
-
-
-
-
-0xC65e549B42D956367c6A3ec2CC054D0B8856a1e9
