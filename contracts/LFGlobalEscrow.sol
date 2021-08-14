@@ -1,6 +1,8 @@
 pragma solidity 0.8.4;
 
-contract LFGlobalEscrow {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract LFGlobalEscrow is Ownable {
     
     enum Sign {
         NULL,
