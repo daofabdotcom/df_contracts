@@ -16,6 +16,7 @@ task("verify-lf-global-escrow", "Verify the lfGlobalEscrow contract on Polygon S
 
     const contractDetails: contractInfo = contracts["polygonmumbai"];
     const lfGlobalEscrowAddress = contractDetails.lfGlobalEscrowAddress;
+    log.info(`verifying lfGlobalEscrowAddress: ${lfGlobalEscrowAddress} on network: ${hre.network.name}`);
     assert(ethers.utils.getAddress(lfGlobalEscrowAddress) == lfGlobalEscrowAddress, "Cannot validate Invalid lfGlobalEscrowAddress");
 
     await hre.run("verify:verify", {
