@@ -212,7 +212,7 @@ contract LFGlobalEscrow is Ownable {
 
             TokenType.ERC20:
                 IERC20 erc20Instance = IERC20(tokenAddress);
-                erc20Instance.transfer(msg.sender, tokenAmount);
+                require(erc20Instance.transfer(msg.sender, tokenAmount));
         }        
     }
     
