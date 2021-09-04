@@ -24,7 +24,7 @@ contract LFGlobalEscrow is Ownable {
         address payable agent;
         TokenType tokenType;
         address tokenAddress;
-        uint2 precision;
+        uint precision;
         uint256 fund;
         bool disputed;
         bool finalized;
@@ -128,13 +128,11 @@ contract LFGlobalEscrow is Ownable {
         e.agent = _agent;
         e.tokenType = tokenType;
 
-        switch(e.tokenType){
-            TokenType.ETH: 
-                e.fund = msg.value;
-
-            TokenType.ERC20:
-                e.tokenAddress = tokenAddress;
-                e.fund = tokenAmount;
+        if(e.tokenType == TokenType.ETH){
+            e.fund = msg.value;
+        }else{
+            e.tokenAddress = erc20TokenAddress;
+            e.fund = tokenAmount;
         }
 
         e.disputed = false;
@@ -206,14 +204,12 @@ contract LFGlobalEscrow is Ownable {
         e.fund = e.fund - _amount;
         e.lastTxBlock = block.number;
 
-        switch(e.tokenType){
-            TokenType.ETH: 
-                require((e.owner).send(_amount));
-
-            TokenType.ERC20:
-                IERC20 erc20Instance = IERC20(tokenAddress);
-                require(erc20Instance.transfer(msg.sender, tokenAmount));
-        }        
+        if(e.tokenType == TokenType.ETH){
+            require((e.owner).send(_amount));
+        }else{
+            IERC20 erc20Instance = IERC20(e.tokenAddress);
+            require(erc20Instance.transfer(msg.sender, _amount));
+        }  
     }
     
 }
