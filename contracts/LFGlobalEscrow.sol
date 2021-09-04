@@ -9,6 +9,11 @@ contract LFGlobalEscrow is Ownable {
         REVERT,
         RELEASE
     }
+
+    enum TokenType {
+        ETH,
+        ERC20
+    }
     
     struct Record {
         string referenceId;
@@ -16,16 +21,16 @@ contract LFGlobalEscrow is Ownable {
         address payable sender;
         address payable receiver;
         address payable agent;
+        TokenType tokenType;
+        address tokenAddress;
+        uint2 precision;
         uint256 fund;
         bool disputed;
         bool finalized;
-        
         mapping(address => bool) signer;
         mapping(address => Sign) signed;
-        
         uint256 releaseCount;
         uint256 revertCount;
-        
         uint256 lastTxBlock;
     }
     
@@ -103,7 +108,10 @@ contract LFGlobalEscrow is Ownable {
             dispute(e);
         }
     }
-    function init(string memory _referenceId, address payable _receiver, address payable _agent) public payable {
+    function init(string memory _referenceId, address payable _receiver, 
+                  address payable _agent,
+                  address erc20TokenAddress,
+                  uint256 tokenAmount) public payable {
         require(msg.sender != address(0), "Sender should not be null");
         require(_receiver != address(0), "Receiver should not be null");
         //require(_trustedParty != address(0), "Trusted Agent should not be null");
