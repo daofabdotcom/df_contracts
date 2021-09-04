@@ -1,6 +1,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract LFGlobalEscrow is Ownable {
     
@@ -110,6 +111,7 @@ contract LFGlobalEscrow is Ownable {
     }
     function init(string memory _referenceId, address payable _receiver, 
                   address payable _agent,
+                  TokenType tokenType,
                   address erc20TokenAddress,
                   uint256 tokenAmount) public payable {
         require(msg.sender != address(0), "Sender should not be null");
@@ -124,7 +126,17 @@ contract LFGlobalEscrow is Ownable {
         e.sender = payable(msg.sender);
         e.receiver = _receiver;
         e.agent = _agent;
-        e.fund = msg.value;
+        e.tokenType = tokenType;
+
+        switch(e.tokenType){
+            TokenType.ETH: 
+                e.fund = msg.value;
+
+            TokenType.ERC20:
+                e.tokenAddress = tokenAddress;
+                e.fund = tokenAmount;
+        }
+
         e.disputed = false;
         e.finalized = false;
         e.lastTxBlock = block.number;
@@ -193,8 +205,15 @@ contract LFGlobalEscrow is Ownable {
         
         e.fund = e.fund - _amount;
         e.lastTxBlock = block.number;
-        
-        require((e.owner).send(_amount));
+
+        switch(e.tokenType){
+            TokenType.ETH: 
+                require((e.owner).send(_amount));
+
+            TokenType.ERC20:
+                IERC20 erc20Instance = IERC20(tokenAddress);
+                erc20Instance.transfer(msg.sender, tokenAmount);
+        }        
     }
     
 }
