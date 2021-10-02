@@ -20,53 +20,53 @@ const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY || "";
 
 //---------------------==
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: "development",
   networks: {
-    // localhost: {
-    //   url: "http://127.0.0.1:8545"
+    development: {
+      url: "http://127.0.0.1:8545"
+    },
+    // polygonmumbai: {
+    //   url: `https://rpc-mumbai.maticvigil.com/v1/${MATICVIGIL_APP_ID}`,
+    //   chainId: 80001,
+    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
+    //   gasPrice: ethers.utils.parseUnits("10", "gwei").toNumber(),
+    //   gas: 15e6,
+    //   gasMultiplier: 10,
+    //   allowUnlimitedContractSize: true,
+    //   blockGasLimit: 0x1fffffffffffff,
     // },
-    polygonmumbai: {
-      url: `https://rpc-mumbai.maticvigil.com/v1/${MATICVIGIL_APP_ID}`,
-      chainId: 80001,
-      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("10", "gwei").toNumber(),
-      gas: 15e6,
-      gasMultiplier: 10,
-      allowUnlimitedContractSize: true,
-      blockGasLimit: 0x1fffffffffffff,
-    },
-    polygonmainnet: {
-      url: `https://polygon-mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
-      chainId: 137,
-      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("150", "gwei").toNumber(),
-      gasMultiplier: 10,
-      timeout: 12000000,
-    },
-    mainnet: {
-      url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
-      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("200", "gwei").toNumber(),
-      gas: 7e6,
-    },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${INFURA_PROJECT_ID}`,
-      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
-      gas: 25e6,
-      gasMultiplier: 10,
-      allowUnlimitedContractSize: true,
-      blockGasLimit: 0x1fffffffffffff,
-    },
-    kovan: {
-      url: `https://kovan.infura.io/v3/${INFURA_PROJECT_ID}`,
-      accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-      gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
-      gas: 25e6,
-      gasMultiplier: 10,
-      allowUnlimitedContractSize: true,
-      blockGasLimit: 0x1fffffffffffff,
-    },
+    // polygonmainnet: {
+    //   url: `https://polygon-mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+    //   chainId: 137,
+    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
+    //   gasPrice: ethers.utils.parseUnits("150", "gwei").toNumber(),
+    //   gasMultiplier: 10,
+    //   timeout: 12000000,
+    // },
+    // mainnet: {
+    //   url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
+    //   gasPrice: ethers.utils.parseUnits("200", "gwei").toNumber(),
+    //   gas: 7e6,
+    // },
+    // rinkeby: {
+    //   url: `https://rinkeby.infura.io/v3/${INFURA_PROJECT_ID}`,
+    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
+    //   gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
+    //   gas: 25e6,
+    //   gasMultiplier: 10,
+    //   allowUnlimitedContractSize: true,
+    //   blockGasLimit: 0x1fffffffffffff,
+    // },
+    // kovan: {
+    //   url: `https://kovan.infura.io/v3/${INFURA_PROJECT_ID}`,
+    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
+    //   gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
+    //   gas: 25e6,
+    //   gasMultiplier: 10,
+    //   allowUnlimitedContractSize: true,
+    //   blockGasLimit: 0x1fffffffffffff,
+    // },
     ganache: {
       url: "http://127.0.0.1:8545",
     },

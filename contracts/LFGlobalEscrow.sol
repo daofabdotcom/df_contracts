@@ -109,7 +109,9 @@ contract LFGlobalEscrow is Ownable {
             dispute(e);
         }
     }
-    function init(string memory _referenceId, address payable _receiver, 
+    function init(string memory _referenceId,
+                  address payable _owner,
+                  address payable _receiver, 
                   address payable _agent,
                   TokenType tokenType,
                   address erc20TokenAddress,
@@ -122,14 +124,14 @@ contract LFGlobalEscrow is Ownable {
         
         Record storage e = _escrow[_referenceId];
         e.referenceId = _referenceId;
-        e.owner = payable(msg.sender);
         e.sender = payable(msg.sender);
+        e.owner = _owner;
         e.receiver = _receiver;
         e.agent = _agent;
         e.tokenType = tokenType;
 
         if(e.tokenType == TokenType.ETH){
-            e.fund = msg.value;
+            e.fund = tokenAmount;
         }else{
             e.tokenAddress = erc20TokenAddress;
             e.fund = tokenAmount;

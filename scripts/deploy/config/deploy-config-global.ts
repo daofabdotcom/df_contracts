@@ -1,2 +1,2 @@
-export const network = "polygonmumbai";
+export const network = "development";
 
