@@ -93,7 +93,7 @@ contract LFGlobalEscrow is Ownable {
     event Withdrawn(string referenceId, address payee, uint256 amount, uint256 lastBlock);
     
     
-    modifier multisigcheck(string memory _referenceId) {
+    modifier multisigcheck(string memory _referenceId) onlyOwner {
         Record storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
         require(e.signer[msg.sender], "msg sender should be eligible to sign");
@@ -115,7 +115,7 @@ contract LFGlobalEscrow is Ownable {
                   address payable _agent,
                   TokenType tokenType,
                   address erc20TokenAddress,
-                  uint256 tokenAmount) public payable {
+                  uint256 tokenAmount) public onlyOwner payable {
         require(msg.sender != address(0), "Sender should not be null");
         require(_receiver != address(0), "Receiver should not be null");
         //require(_trustedParty != address(0), "Trusted Agent should not be null");
@@ -158,7 +158,7 @@ contract LFGlobalEscrow is Ownable {
         e.releaseCount++;
     }
     
-    function reverse(string memory _referenceId) public multisigcheck(_referenceId) {
+    function reverse(string memory _referenceId) public onlyOwner multisigcheck(_referenceId) {
         Record storage e = _escrow[_referenceId];
         
         emit Signature(_referenceId, msg.sender, Sign.REVERT, e.lastTxBlock);
@@ -167,7 +167,7 @@ contract LFGlobalEscrow is Ownable {
         e.revertCount++;
     }
     
-    function dispute(string memory _referenceId) public {
+    function dispute(string memory _referenceId) public onlyOwner {
         Record storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
         require(msg.sender == e.sender || msg.sender == e.receiver, "Only sender or receiver can call dispute");
@@ -175,19 +175,19 @@ contract LFGlobalEscrow is Ownable {
         dispute(e);
     }
     
-    function transferOwnership(Record storage e) internal {
+    function transferOwnership(Record storage e) onlyOwner internal {
         e.owner = e.receiver;
         finalize(e);
         e.lastTxBlock = block.number;
     }
     
-    function dispute(Record storage e) internal {
+    function dispute(Record storage e) onlyOwner internal {
         emit Disputed(e.referenceId, msg.sender, e.lastTxBlock);
         e.disputed = true;
         e.lastTxBlock = block.number;
     }
     
-    function finalize(Record storage e) internal {
+    function finalize(Record storage e) onlyOwner internal {
         require(!e.finalized, "Escrow should not be finalized");
         
         emit Finalized(e.referenceId, e.owner, e.lastTxBlock);
@@ -195,7 +195,7 @@ contract LFGlobalEscrow is Ownable {
         e.finalized = true;
     }
     
-    function withdraw(string memory _referenceId, uint256 _amount) public {
+    function withdraw(string memory _referenceId, uint256 _amount) onlyOwner public {
         Record storage e = _escrow[_referenceId];
         require(e.finalized, "Escrow should be finalized before withdrawal");
         require(msg.sender == e.owner, "only owner can withdraw funds");
