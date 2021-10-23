@@ -16,16 +16,19 @@ contract LFGlobalEscrow is Ownable {
         ERC20
     }
     
-    struct Record {
+    struct EscrowRecord {
         string referenceId;
-        address payable owner;
+        address payable txnInitiator;
         address payable sender;
+        address payable owner;
         address payable receiver;
         address payable agent;
         TokenType tokenType;
+        bool shouldInvest;
         address tokenAddress;
         uint precision;
         uint256 fund;
+        bool funded;
         bool disputed;
         bool finalized;
         mapping(address => bool) signer;
@@ -35,7 +38,7 @@ contract LFGlobalEscrow is Ownable {
         uint256 lastTxBlock;
     }
     
-    mapping(string => Record) _escrow;
+    mapping(string => EscrowRecord) _escrow;
     
     function owner(string memory _referenceId) public view returns (address payable) {
         return _escrow[_referenceId].owner;
@@ -43,6 +46,10 @@ contract LFGlobalEscrow is Ownable {
     
     function sender(string memory _referenceId) public view returns (address payable) {
         return _escrow[_referenceId].sender;
+    }
+
+    function txnInitiator(string memory _referenceId) public view returns (address payable) {
+        return _escrow[_referenceId].txnInitiator;
     }
     
     function receiver(string memory _referenceId) public view returns (address payable) {
@@ -85,19 +92,19 @@ contract LFGlobalEscrow is Ownable {
         return _escrow[_referenceId].revertCount;
     }
     
-    event Initiated(string referenceId, address payer, uint256 amount, address payee, address trustedParty, uint256 lastBlock);
-    //event OwnershipTransferred(string referenceIdHash, address oldOwner, address newOwner, uint256 lastBlock);
+    event EscrowInitiated(string referenceId, address payer, uint256 amount, address payee, address trustedParty, uint256 lastBlock);
+    event OwnershipTransferred(string referenceIdHash, address oldOwner, address newOwner, uint256 lastBlock);
     event Signature(string referenceId, address signer, Sign action, uint256 lastBlock);
     event Finalized(string referenceId, address winner, uint256 lastBlock);
     event Disputed(string referenceId, address disputer, uint256 lastBlock);
     event Withdrawn(string referenceId, address payee, uint256 amount, uint256 lastBlock);
     
     
-    modifier multisigcheck(string memory _referenceId) onlyOwner {
-        Record storage e = _escrow[_referenceId];
+    modifier multisigcheck(string memory _referenceId, address _party) {
+        EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
-        require(e.signer[msg.sender], "msg sender should be eligible to sign");
-        require(e.signed[msg.sender] == Sign.NULL, "msg sender should not have signed already");
+        require(e.signer[_party], "party should be eligible to sign");
+        require(e.signed[_party] == Sign.NULL, "party should not have signed already");
         
         _;
         
@@ -106,7 +113,7 @@ contract LFGlobalEscrow is Ownable {
         }else if(e.revertCount == 2) {
             finalize(e);
         }else if(e.releaseCount == 1 && e.revertCount == 1) {
-            dispute(e);
+            dispute(e, _party);
         }
     }
     function init(string memory _referenceId,
@@ -117,14 +124,14 @@ contract LFGlobalEscrow is Ownable {
                   address erc20TokenAddress,
                   uint256 tokenAmount) public onlyOwner payable {
         require(msg.sender != address(0), "Sender should not be null");
+        require(_owner != address(0), "Receiver should not be null");
         require(_receiver != address(0), "Receiver should not be null");
-        //require(_trustedParty != address(0), "Trusted Agent should not be null");
+        require(_agent != address(0), "Trusted Agent should not be null");
         
-        emit Initiated(_referenceId, msg.sender, msg.value, _receiver, _agent, 0);
-        
-        Record storage e = _escrow[_referenceId];
+        EscrowRecord storage e = _escrow[_referenceId];
         e.referenceId = _referenceId;
-        e.sender = payable(msg.sender);
+        e.txnInitiator = payable(msg.sender);
+        e.sender = _owner;
         e.owner = _owner;
         e.receiver = _receiver;
         e.agent = _agent;
@@ -144,50 +151,52 @@ contract LFGlobalEscrow is Ownable {
         e.releaseCount = 0;
         e.revertCount = 0;
                 
-        _escrow[_referenceId].signer[msg.sender] = true;
+        _escrow[_referenceId].signer[_owner] = true;
         _escrow[_referenceId].signer[_receiver] = true;
         _escrow[_referenceId].signer[_agent] = true;
+
+        emit EscrowInitiated(_referenceId, _owner, e.fund, _receiver, _agent, block.number);
     }
     
-    function release(string memory _referenceId) public multisigcheck(_referenceId) {
-        Record storage e = _escrow[_referenceId];
+    function release(string memory _referenceId, address _party) public multisigcheck(_referenceId, _party) {
+        EscrowRecord storage e = _escrow[_referenceId];
         
-        emit Signature(_referenceId, msg.sender, Sign.RELEASE, e.lastTxBlock);
+        emit Signature(_referenceId, e.owner, Sign.RELEASE, e.lastTxBlock);
         
-        e.signed[msg.sender] = Sign.RELEASE;
+        e.signed[e.owner] = Sign.RELEASE;
         e.releaseCount++;
     }
     
-    function reverse(string memory _referenceId) public onlyOwner multisigcheck(_referenceId) {
-        Record storage e = _escrow[_referenceId];
+    function reverse(string memory _referenceId, address _party) public onlyOwner multisigcheck(_referenceId, _party) {
+        EscrowRecord storage e = _escrow[_referenceId];
         
-        emit Signature(_referenceId, msg.sender, Sign.REVERT, e.lastTxBlock);
+        emit Signature(_referenceId,  e.owner, Sign.REVERT, e.lastTxBlock);
         
-        e.signed[msg.sender] = Sign.REVERT;
+        e.signed[e.owner] = Sign.REVERT;
         e.revertCount++;
     }
     
-    function dispute(string memory _referenceId) public onlyOwner {
-        Record storage e = _escrow[_referenceId];
+    function dispute(string memory _referenceId, address _party) public onlyOwner {
+        EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
-        require(msg.sender == e.sender || msg.sender == e.receiver, "Only sender or receiver can call dispute");
+        require(_party == e.owner || _party == e.receiver, "Only owner or receiver can call dispute");
         
-        dispute(e);
+        dispute(e, _party);
     }
     
-    function transferOwnership(Record storage e) onlyOwner internal {
+    function transferOwnership(EscrowRecord storage e) onlyOwner internal {
         e.owner = e.receiver;
         finalize(e);
         e.lastTxBlock = block.number;
     }
     
-    function dispute(Record storage e) onlyOwner internal {
-        emit Disputed(e.referenceId, msg.sender, e.lastTxBlock);
+    function dispute(EscrowRecord storage e, address _party) onlyOwner internal {
+        emit Disputed(e.referenceId, _party, e.lastTxBlock);
         e.disputed = true;
         e.lastTxBlock = block.number;
     }
     
-    function finalize(Record storage e) onlyOwner internal {
+    function finalize(EscrowRecord storage e) onlyOwner internal {
         require(!e.finalized, "Escrow should not be finalized");
         
         emit Finalized(e.referenceId, e.owner, e.lastTxBlock);
@@ -196,12 +205,12 @@ contract LFGlobalEscrow is Ownable {
     }
     
     function withdraw(string memory _referenceId, uint256 _amount) onlyOwner public {
-        Record storage e = _escrow[_referenceId];
+        EscrowRecord storage e = _escrow[_referenceId];
+        address escrowOwner = e.owner;
         require(e.finalized, "Escrow should be finalized before withdrawal");
-        require(msg.sender == e.owner, "only owner can withdraw funds");
         require(_amount <= e.fund, "cannot withdraw more than the deposit");
         
-        emit Withdrawn(_referenceId, msg.sender, _amount, e.lastTxBlock);
+        emit Withdrawn(_referenceId, escrowOwner, _amount, e.lastTxBlock);
         
         e.fund = e.fund - _amount;
         e.lastTxBlock = block.number;
@@ -210,8 +219,7 @@ contract LFGlobalEscrow is Ownable {
             require((e.owner).send(_amount));
         }else{
             IERC20 erc20Instance = IERC20(e.tokenAddress);
-            require(erc20Instance.transfer(msg.sender, _amount));
+            require(erc20Instance.transfer(escrowOwner, _amount));
         }  
-    }
-    
+    }    
 }
