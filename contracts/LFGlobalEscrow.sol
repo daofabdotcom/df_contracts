@@ -40,56 +40,12 @@ contract LFGlobalEscrow is Ownable {
     
     mapping(string => EscrowRecord) _escrow;
     
-    function owner(string memory _referenceId) public view returns (address payable) {
-        return _escrow[_referenceId].owner;
-    }
-    
-    function sender(string memory _referenceId) public view returns (address payable) {
-        return _escrow[_referenceId].sender;
-    }
-
-    function txnInitiator(string memory _referenceId) public view returns (address payable) {
-        return _escrow[_referenceId].txnInitiator;
-    }
-    
-    function receiver(string memory _referenceId) public view returns (address payable) {
-        return _escrow[_referenceId].receiver;
-    }
-    
-    function agent(string memory _referenceId) public view returns (address payable) {
-        return _escrow[_referenceId].agent;
-    }
-    
-    function amount(string memory _referenceId) public view returns (uint256) {
-        return _escrow[_referenceId].fund;
-    }
-    
-    function isDisputed(string memory _referenceId) public view returns (bool) {
-        return _escrow[_referenceId].disputed;
-    }
-    
-    function isFinalized(string memory _referenceId) public view returns (bool) {
-        return _escrow[_referenceId].finalized;
-    }
-    
-    function lastBlock(string memory _referenceId) public view returns (uint256) {
-        return _escrow[_referenceId].lastTxBlock;
-    }
-    
     function isSigner(string memory _referenceId, address _signer) public view returns (bool) {
         return _escrow[_referenceId].signer[_signer];
     }
     
     function getSignedAction(string memory _referenceId, address _signer) public view returns (Sign) {
         return _escrow[_referenceId].signed[_signer];
-    }
-    
-    function releaseCount(string memory _referenceId) public view returns (uint256) {
-        return _escrow[_referenceId].releaseCount;
-    }
-    
-    function revertCount(string memory _referenceId) public view returns (uint256) {
-        return _escrow[_referenceId].revertCount;
     }
     
     event EscrowInitiated(string referenceId, address payer, uint256 amount, address payee, address trustedParty, uint256 lastBlock);
