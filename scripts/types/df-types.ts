@@ -4,5 +4,5 @@ export interface contractInfo {
     chainId:  number;
     isTestnet: boolean;
     deployerAddress: string;
-    lfGlobalEscrowAddress: string;
+    dfGlobalEscrowAddress: string;
 }

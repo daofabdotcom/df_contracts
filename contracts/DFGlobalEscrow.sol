@@ -3,7 +3,7 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract LFGlobalEscrow is Ownable {
+contract DFGlobalEscrow is Ownable {
     
     enum Sign {
         NULL,
@@ -113,6 +113,8 @@ contract LFGlobalEscrow is Ownable {
 
         emit EscrowInitiated(_referenceId, _owner, e.fund, _receiver, _agent, block.number);
     }
+
+    function fundEscrow()
     
     function release(string memory _referenceId, address _party) public multisigcheck(_referenceId, _party) {
         EscrowRecord storage e = _escrow[_referenceId];

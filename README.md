@@ -42,7 +42,7 @@ ganache-cli -p 8545
 ## Deploy the contracts:
 
 ```sh
-npx hardhat scripts/deploy-lf-global-escrow.task.ts --network development
+npx hardhat deploy-df-global-escrow --network development
 ```
 
 ## Test contracts:

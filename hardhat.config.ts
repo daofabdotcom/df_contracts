@@ -10,8 +10,8 @@ import { ethers } from "ethers";
 
 require("dotenv").config();
 
-require("./scripts/deploy/deploy-lf-global-escrow.task.ts");
-require("./scripts/verify/verify-lf-global-escrow.task.ts");
+require("./scripts/deploy/deploy-df-global-escrow.task.ts");
+require("./scripts/verify/verify-df-global-escrow.task.ts");
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID || "";
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY || "";

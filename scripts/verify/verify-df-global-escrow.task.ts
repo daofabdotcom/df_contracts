@@ -9,17 +9,17 @@ import { strict as assert } from 'assert';
 import { contracts } from "../deploy/config/contracts-testnet";
 import { contractInfo } from "../types/df-types";
 
-task("verify-lf-global-escrow", "Verify the lfGlobalEscrow contract on Polygon Scan")
+task("verify-df-global-escrow", "Verify the dfGlobalEscrow contract on Polygon Scan")
   .setAction(async (args, hre) => {
-    log.info(`deploying lfGlobalEscrow on network: ${hre.network.name}`);
+    log.info(`deploying dfGlobalEscrow on network: ${hre.network.name}`);
     assert(globalConfigNetwork === hre.network.name, "network mismatch");
 
     const contractDetails: contractInfo = contracts["polygonmumbai"];
-    const lfGlobalEscrowAddress = contractDetails.lfGlobalEscrowAddress;
-    log.info(`verifying lfGlobalEscrowAddress: ${lfGlobalEscrowAddress} on network: ${hre.network.name}`);
-    assert(ethers.utils.getAddress(lfGlobalEscrowAddress) == lfGlobalEscrowAddress, "Cannot validate Invalid lfGlobalEscrowAddress");
+    const dfGlobalEscrowAddress = contractDetails.dfGlobalEscrowAddress;
+    log.info(`verifying dfGlobalEscrowAddress: ${dfGlobalEscrowAddress} on network: ${hre.network.name}`);
+    assert(ethers.utils.getAddress(dfGlobalEscrowAddress) == dfGlobalEscrowAddress, "Cannot validate Invalid dfGlobalEscrowAddress");
 
     await hre.run("verify:verify", {
-        address: lfGlobalEscrowAddress
+        address: dfGlobalEscrowAddress
     });
 });
