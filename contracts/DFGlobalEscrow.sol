@@ -54,7 +54,7 @@ contract DFGlobalEscrow is Ownable {
     event Finalized(string referenceId, address winner, uint256 lastBlock);
     event Disputed(string referenceId, address disputer, uint256 lastBlock);
     event Withdrawn(string referenceId, address payee, uint256 amount, uint256 lastBlock);
-    
+    event Funded(string indexed referenceId, address indexed owner, uint256 amount, uint256 lastBlock);
     
     modifier multisigcheck(string memory _referenceId, address _party) {
         EscrowRecord storage e = _escrow[_referenceId];
@@ -83,7 +83,8 @@ contract DFGlobalEscrow is Ownable {
         require(_owner != address(0), "Receiver should not be null");
         require(_receiver != address(0), "Receiver should not be null");
         require(_agent != address(0), "Trusted Agent should not be null");
-        
+        require(_escrow[_referenceId].lastTxBlock == 0, "Duplicate Escrow");
+
         EscrowRecord storage e = _escrow[_referenceId];
         e.referenceId = _referenceId;
         e.txnInitiator = payable(msg.sender);
@@ -92,6 +93,7 @@ contract DFGlobalEscrow is Ownable {
         e.receiver = _receiver;
         e.agent = _agent;
         e.tokenType = tokenType;
+        e.funded = false;
 
         if(e.tokenType == TokenType.ETH){
             e.fund = tokenAmount;
@@ -114,7 +116,21 @@ contract DFGlobalEscrow is Ownable {
         emit EscrowInitiated(_referenceId, _owner, e.fund, _receiver, _agent, block.number);
     }
 
-    function fundEscrow()
+    function fund(string memory _referenceId, uint256 fundAmount) public payable onlyOwner {
+        require(_escrow[_referenceId].lastTxBlock > 0, "Sender should not be null");
+        uint256 escrowFund = _escrow[_referenceId].fund;
+        EscrowRecord storage e = _escrow[_referenceId];
+        if(e.tokenType == TokenType.ETH){
+            require(msg.value == escrowFund, "Must fund for exact ETH-amount in Escrow");
+        }else{
+            require(fundAmount == escrowFund, "Must fund for exact ERC20-amount in Escrow");
+            IERC20 erc20Instance = IERC20(e.tokenAddress);
+            erc20Instance.transferFrom(msg.sender, address(this), fundAmount);
+        }
+
+        e.funded = true;
+        emit Funded(_referenceId, e.owner, e.fund, block.number);
+    }
     
     function release(string memory _referenceId, address _party) public multisigcheck(_referenceId, _party) {
         EscrowRecord storage e = _escrow[_referenceId];
