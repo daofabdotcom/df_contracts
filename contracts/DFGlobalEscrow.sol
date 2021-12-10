@@ -110,8 +110,7 @@ contract DFGlobalEscrow is Ownable {
     }
 
     modifier onlyEscrowOwner(string memory _referenceId, address _party) {
-        EscrowRecord storage e = _escrow[_referenceId];
-        require(e.owner == _party, "Sender must be Escrow-owner");
+        require(_escrow[_referenceId].owner == _party, "Sender must be Escrow-owner");
         _;
     }
 
@@ -119,12 +118,20 @@ contract DFGlobalEscrow is Ownable {
         string memory _referenceId,
         address _party
     ) {
-        EscrowRecord storage e = _escrow[_referenceId];
         require(
-            e.owner == _party || e.delegator == _party,
+            _escrow[_referenceId].owner == _party || _escrow[_referenceId].delegator == _party,
             "Sender must be Escrow-owner or contract-admin"
         );
         _;
+    }
+
+    modifier isFunded(string memory _referenceId) {
+        require(
+            _escrow[_referenceId].funded == true ,
+            "Escrow should be funded"
+        );
+        _;
+
     }
 
     function createEscrow(
@@ -209,7 +216,7 @@ contract DFGlobalEscrow is Ownable {
         }
 
         e.funded = true;
-        emit Funded(_referenceId, e.owner, e.fund, block.number);
+        emit Funded(_referenceId, e.owner, escrowFund, block.number);
     }
 
     function release(string memory _referenceId, address _party)
@@ -276,7 +283,7 @@ contract DFGlobalEscrow is Ownable {
 
     function withdraw(string memory _referenceId, uint256 _amount)
         public
-        onlyOwner
+        onlyOwner isFunded(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(e.finalized, "Escrow should be finalized before withdrawal");
