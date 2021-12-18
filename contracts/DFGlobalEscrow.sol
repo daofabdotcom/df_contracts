@@ -121,16 +121,6 @@ contract DFGlobalEscrow is Ownable {
         _;
     }
 
-    modifier onlyEscrowOwnerOrRecipientOrDelegator(string memory _referenceId) {
-        require(
-            _escrow[_referenceId].owner == msg.sender ||
-            _escrow[_referenceId].recipient == msg.sender ||
-            _escrow[_referenceId].delegator == msg.sender,
-            "Sender must be Escrow-owner or recipient or delegator"
-        );
-        _;
-    }
-
     modifier onlyEscrowPartyOrDelegator(string memory _referenceId) {
         require(
             _escrow[_referenceId].owner == msg.sender ||
@@ -261,15 +251,13 @@ contract DFGlobalEscrow is Ownable {
         e.revertCount++;
     }
 
-    function dispute(string memory _referenceId)
-        public
-        onlyEscrowPartyOrDelegator(_referenceId)
+    function dispute(string memory _referenceId) public
     {
         EscrowRecord storage e = _escrow[_referenceId];
-        require(!e.finalized, "Escrow should not be finalized");
+        require(!e.finalized, "Cannot dispute on a finalised Escrow");
         require(
-            msg.sender == e.owner || msg.sender == e.recipient,
-            "Only owner or recipient can call dispute"
+            msg.sender == e.owner || msg.sender == e.recipient || msg.sender == e.delegator,
+            "Only owner or recipient or delgator can dispute on escrow"
         );
 
         dispute(e);
