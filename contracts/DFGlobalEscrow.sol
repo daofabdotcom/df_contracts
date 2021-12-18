@@ -19,12 +19,11 @@ contract DFGlobalEscrow is Ownable {
         string referenceId;
         address payable delegator;
         address payable owner;
-        address payable receiver;
+        address payable recipient;
         address payable agent;
         TokenType tokenType;
         bool shouldInvest;
         address tokenAddress;
-        uint256 precision;
         uint256 fund;
         bool funded;
         bool disputed;
@@ -62,12 +61,7 @@ contract DFGlobalEscrow is Ownable {
         address trustedParty,
         uint256 lastBlock
     );
-    event OwnershipTransferred(
-        string referenceIdHash,
-        address oldOwner,
-        address newOwner,
-        uint256 lastBlock
-    );
+
     event Signature(
         string referenceId,
         address signer,
@@ -89,7 +83,8 @@ contract DFGlobalEscrow is Ownable {
         uint256 lastBlock
     );
 
-    modifier multisigcheck(string memory _referenceId, address _party) {
+    modifier multisigcheck(string memory _referenceId) {
+        address _party = payable(msg.sender);
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
         require(e.signer[_party], "party should be eligible to sign");
@@ -105,47 +100,68 @@ contract DFGlobalEscrow is Ownable {
         } else if (e.revertCount == 2) {
             finalize(e);
         } else if (e.releaseCount == 1 && e.revertCount == 1) {
-            dispute(e, _party);
+            dispute(e);
         }
     }
 
-    modifier onlyEscrowOwner(string memory _referenceId, address _party) {
-        require(_escrow[_referenceId].owner == _party, "Sender must be Escrow-owner");
+    modifier onlyEscrowOwner(string memory _referenceId) {
+        require(
+            _escrow[_referenceId].owner == msg.sender,
+            "Sender must be Escrow-owner"
+        );
         _;
     }
 
-    modifier onlyEscrowOwnerOrDelegator(
-        string memory _referenceId,
-        address _party
-    ) {
+    modifier onlyEscrowOwnerOrDelegator(string memory _referenceId) {
         require(
-            _escrow[_referenceId].owner == _party || _escrow[_referenceId].delegator == _party,
-            "Sender must be Escrow-owner or contract-admin"
+            _escrow[_referenceId].owner == msg.sender ||
+            _escrow[_referenceId].delegator == msg.sender,
+            "Sender must be Escrow-owner or Delegator"
+        );
+        _;
+    }
+
+    modifier onlyEscrowOwnerOrRecipientOrDelegator(string memory _referenceId) {
+        require(
+            _escrow[_referenceId].owner == msg.sender ||
+            _escrow[_referenceId].recipient == msg.sender ||
+            _escrow[_referenceId].delegator == msg.sender,
+            "Sender must be Escrow-owner or recipient or delegator"
+        );
+        _;
+    }
+
+    modifier onlyEscrowPartyOrDelegator(string memory _referenceId) {
+        require(
+            _escrow[_referenceId].owner == msg.sender ||
+            _escrow[_referenceId].recipient == msg.sender ||
+            _escrow[_referenceId].agent == msg.sender ||
+            _escrow[_referenceId].delegator == msg.sender,
+            "Sender must be Escrow-Party or delegator"
         );
         _;
     }
 
     modifier isFunded(string memory _referenceId) {
         require(
-            _escrow[_referenceId].funded == true ,
+            _escrow[_referenceId].funded == true,
             "Escrow should be funded"
         );
         _;
-
     }
 
     function createEscrow(
         string memory _referenceId,
         address payable _owner,
-        address payable _receiver,
+        address payable _recipient,
         address payable _agent,
         TokenType tokenType,
         address erc20TokenAddress,
         uint256 tokenAmount
     ) public payable onlyOwner {
         require(msg.sender != address(0), "Sender should not be null");
-        require(_owner != address(0), "Receiver should not be null");
-        require(_receiver != address(0), "Receiver should not be null");
+        require(_owner != address(0), "Recipient should not be null");
+        require(_recipient != address(0), "Recipient should not be null");
         require(_agent != address(0), "Trusted Agent should not be null");
         require(_escrow[_referenceId].lastTxBlock == 0, "Duplicate Escrow");
 
@@ -157,7 +173,7 @@ contract DFGlobalEscrow is Ownable {
             e.delegator = payable(msg.sender);
         }
 
-        e.receiver = _receiver;
+        e.recipient = _recipient;
         e.agent = _agent;
         e.tokenType = tokenType;
         e.funded = false;
@@ -177,14 +193,14 @@ contract DFGlobalEscrow is Ownable {
         e.revertCount = 0;
 
         _escrow[_referenceId].signer[_owner] = true;
-        _escrow[_referenceId].signer[_receiver] = true;
+        _escrow[_referenceId].signer[_recipient] = true;
         _escrow[_referenceId].signer[_agent] = true;
 
         emit EscrowInitiated(
             _referenceId,
             _owner,
             e.fund,
-            _receiver,
+            _recipient,
             _agent,
             block.number
         );
@@ -193,7 +209,7 @@ contract DFGlobalEscrow is Ownable {
     function fund(string memory _referenceId, uint256 fundAmount)
         public
         payable
-        onlyEscrowOwnerOrDelegator(_referenceId, msg.sender)
+        onlyEscrowOwnerOrDelegator(_referenceId)
     {
         require(
             _escrow[_referenceId].lastTxBlock > 0,
@@ -203,7 +219,7 @@ contract DFGlobalEscrow is Ownable {
         EscrowRecord storage e = _escrow[_referenceId];
         if (e.tokenType == TokenType.ETH) {
             require(
-                msg.value == escrowFund,
+                msg.value * (1 ether) == escrowFund,
                 "Must fund for exact ETH-amount in Escrow"
             );
         } else {
@@ -219,9 +235,10 @@ contract DFGlobalEscrow is Ownable {
         emit Funded(_referenceId, e.owner, escrowFund, block.number);
     }
 
-    function release(string memory _referenceId, address _party)
+    function release(string memory _referenceId)
         public
-        multisigcheck(_referenceId, _party)
+        multisigcheck(_referenceId)
+        onlyEscrowPartyOrDelegator(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
 
@@ -231,10 +248,10 @@ contract DFGlobalEscrow is Ownable {
         e.releaseCount++;
     }
 
-    function reverse(string memory _referenceId, address _party)
+    function reverse(string memory _referenceId)
         public
-        onlyOwner
-        multisigcheck(_referenceId, _party)
+        onlyEscrowPartyOrDelegator(_referenceId)
+        multisigcheck(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
 
@@ -244,36 +261,34 @@ contract DFGlobalEscrow is Ownable {
         e.revertCount++;
     }
 
-    function dispute(string memory _referenceId, address _party)
+    function dispute(string memory _referenceId)
         public
-        onlyOwner
+        onlyEscrowPartyOrDelegator(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
         require(
-            _party == e.owner || _party == e.receiver,
-            "Only owner or receiver can call dispute"
+            msg.sender == e.owner || msg.sender == e.recipient,
+            "Only owner or recipient can call dispute"
         );
 
-        dispute(e, _party);
+        dispute(e);
     }
 
-    function transferOwnership(EscrowRecord storage e) internal onlyOwner {
-        e.owner = e.receiver;
+    function transferOwnership(EscrowRecord storage e) internal {
+        e.owner = e.recipient;
         finalize(e);
         e.lastTxBlock = block.number;
     }
 
-    function dispute(EscrowRecord storage e, address _party)
-        internal
-        onlyOwner
+    function dispute(EscrowRecord storage e) internal
     {
-        emit Disputed(e.referenceId, _party, e.lastTxBlock);
+        emit Disputed(e.referenceId, msg.sender, e.lastTxBlock);
         e.disputed = true;
         e.lastTxBlock = block.number;
     }
 
-    function finalize(EscrowRecord storage e) internal onlyOwner {
+    function finalize(EscrowRecord storage e) internal {
         require(!e.finalized, "Escrow should not be finalized");
 
         emit Finalized(e.referenceId, e.owner, e.lastTxBlock);
@@ -283,7 +298,8 @@ contract DFGlobalEscrow is Ownable {
 
     function withdraw(string memory _referenceId, uint256 _amount)
         public
-        onlyOwner isFunded(_referenceId)
+        onlyEscrowOwner(_referenceId)
+        isFunded(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(e.finalized, "Escrow should be finalized before withdrawal");

@@ -18,13 +18,13 @@ const contracts = {
         dfGlobalEscrowAddress: ""
 
     },
-    "ropsten":{
+    "rinkeby":{
         blockchainCode: "ETH",
         network: "ropsten",
-        chainId: 0,
+        chainId: 4,
         isTestnet: true,
-        deployerAddress: "",
-        dfGlobalEscrowAddress: ""
+        deployerAddress: "0x2Bbe50113D8114EECf33bc4aA8CBF02CA1ef1f5A",
+        dfGlobalEscrowAddress: "0xDD3e4f5F71330954EC14B64D8F2eBE74267602f1"
     }
 };
 

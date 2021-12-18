@@ -66,3 +66,19 @@ npx hardhat test --network development
 ```sh
 npx hardhat test test/<fileName> --network development
 ```
+
+
+
+
+
+//ETH
+Escrow(escrowaddress).methods.fund(_refernceId, 0.25*10^18);
+
+
+
+
+//ERC20
+IERC20(erc20Address).methods.approve(walletAddress, 2300*10^6);
+Escrow(escrowaddress).methods.fund(_refernceId, 2300*10^6);
+
+//precision - 

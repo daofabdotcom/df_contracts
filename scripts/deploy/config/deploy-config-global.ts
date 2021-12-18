@@ -1,2 +1,2 @@
-export const network = "development";
-export const escrow = "0xA23087e3f2c46679b9d090947Bbb5c309bfEfDff"
+export const network = "rinkeby";
+export const escrow = "0xDD3e4f5F71330954EC14B64D8F2eBE74267602f1"

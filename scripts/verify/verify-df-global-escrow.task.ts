@@ -14,7 +14,7 @@ task("verify-df-global-escrow", "Verify the dfGlobalEscrow contract on Polygon S
     log.info(`deploying dfGlobalEscrow on network: ${hre.network.name}`);
     assert(globalConfigNetwork === hre.network.name, "network mismatch");
 
-    const contractDetails: contractInfo = contracts["polygonmumbai"];
+    const contractDetails: contractInfo = contracts[hre.network.name];
     const dfGlobalEscrowAddress = contractDetails.dfGlobalEscrowAddress;
     log.info(`verifying dfGlobalEscrowAddress: ${dfGlobalEscrowAddress} on network: ${hre.network.name}`);
     assert(ethers.utils.getAddress(dfGlobalEscrowAddress) == dfGlobalEscrowAddress, "Cannot validate Invalid dfGlobalEscrowAddress");
