@@ -24,7 +24,7 @@ const contracts = {
         chainId: 4,
         isTestnet: true,
         deployerAddress: "0x2Bbe50113D8114EECf33bc4aA8CBF02CA1ef1f5A",
-        dfGlobalEscrowAddress: "0x866EEfB088f2B05a1CFc9282932882dC98fd29A8"
+        dfGlobalEscrowAddress: "0x1B3B2cd2C6a8f29E3BfC6F68b4C67Bae90e5be19"
     }
 };
 

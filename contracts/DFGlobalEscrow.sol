@@ -83,8 +83,7 @@ contract DFGlobalEscrow is Ownable {
         uint256 lastBlock
     );
 
-    modifier multisigcheck(string memory _referenceId) {
-        address _party = payable(msg.sender);
+    modifier multisigcheck(string memory _referenceId, address _party) {
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
         require(e.signer[_party], "party should be eligible to sign");
@@ -100,14 +99,14 @@ contract DFGlobalEscrow is Ownable {
         } else if (e.revertCount == 2) {
             finalize(e);
         } else if (e.releaseCount == 1 && e.revertCount == 1) {
-            dispute(e);
+            dispute(e, _party);
         }
     }
 
     modifier onlyEscrowOwner(string memory _referenceId) {
         require(
             _escrow[_referenceId].owner == msg.sender,
-            "Sender must be Escrow-owner"
+            "Sender must be Escrow's owner"
         );
         _;
     }
@@ -116,7 +115,7 @@ contract DFGlobalEscrow is Ownable {
         require(
             _escrow[_referenceId].owner == msg.sender ||
             _escrow[_referenceId].delegator == msg.sender,
-            "Sender must be Escrow-owner or Delegator"
+            "Sender must be Escrow's owner or delegator"
         );
         _;
     }
@@ -127,7 +126,17 @@ contract DFGlobalEscrow is Ownable {
             _escrow[_referenceId].recipient == msg.sender ||
             _escrow[_referenceId].agent == msg.sender ||
             _escrow[_referenceId].delegator == msg.sender,
-            "Sender must be Escrow-Party or delegator"
+            "Sender must be Escrow's Owner or Recipient or agent or delegator"
+        );
+        _;
+    }
+
+    modifier onlyEscrowOwnerOrRecipientOrDelegator(string memory _referenceId) {
+        require(
+            _escrow[_referenceId].owner == msg.sender ||
+            _escrow[_referenceId].recipient == msg.sender ||
+            _escrow[_referenceId].delegator == msg.sender,
+            "Sender must be Escrow's Owner or Recipient or delegator"
         );
         _;
     }
@@ -225,12 +234,17 @@ contract DFGlobalEscrow is Ownable {
         emit Funded(_referenceId, e.owner, escrowFund, block.number);
     }
 
-    function release(string memory _referenceId)
+    function release(string memory _referenceId, address _party)
         public
-        multisigcheck(_referenceId)
+        multisigcheck(_referenceId, _party)
         onlyEscrowPartyOrDelegator(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
+
+        require(
+          _party == e.owner || _party == e.recipient || _party == e.agent,
+          "Only owner or recipient or agent can reverse an escrow"
+        );
 
         emit Signature(_referenceId, e.owner, Sign.RELEASE, e.lastTxBlock);
 
@@ -238,12 +252,17 @@ contract DFGlobalEscrow is Ownable {
         e.releaseCount++;
     }
 
-    function reverse(string memory _referenceId)
+    function reverse(string memory _referenceId, address _party)
         public
         onlyEscrowPartyOrDelegator(_referenceId)
-        multisigcheck(_referenceId)
+        multisigcheck(_referenceId, _party)
     {
         EscrowRecord storage e = _escrow[_referenceId];
+        
+        require(
+          _party == e.owner || _party == e.recipient || _party == e.agent,
+          "Only owner or recipient or agent can reverse an escrow"
+        );
 
         emit Signature(_referenceId, e.owner, Sign.REVERT, e.lastTxBlock);
 
@@ -251,16 +270,17 @@ contract DFGlobalEscrow is Ownable {
         e.revertCount++;
     }
 
-    function dispute(string memory _referenceId) public
+    function dispute(string memory _referenceId, address _party) public 
+    onlyEscrowOwnerOrRecipientOrDelegator(_referenceId)
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Cannot dispute on a finalised Escrow");
         require(
-            msg.sender == e.owner || msg.sender == e.recipient || msg.sender == e.delegator,
-            "Only owner or recipient or delgator can dispute on escrow"
+            _party == e.owner || _party == e.recipient,
+            "Only owner or recipient can dispute on escrow"
         );
 
-        dispute(e);
+        dispute(e, _party);
     }
 
     function transferOwnership(EscrowRecord storage e) internal {
@@ -269,9 +289,9 @@ contract DFGlobalEscrow is Ownable {
         e.lastTxBlock = block.number;
     }
 
-    function dispute(EscrowRecord storage e) internal
+    function dispute(EscrowRecord storage e, address _party) internal
     {
-        emit Disputed(e.referenceId, msg.sender, e.lastTxBlock);
+        emit Disputed(e.referenceId, _party, e.lastTxBlock);
         e.disputed = true;
         e.lastTxBlock = block.number;
     }
