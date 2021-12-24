@@ -4,6 +4,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DFGlobalEscrow is Ownable {
+
+    uint256 constant private ETH_MULTIPLIER = 10 ** 18;
+
     enum Sign {
         NULL,
         REVERT,
@@ -22,17 +25,17 @@ contract DFGlobalEscrow is Ownable {
         address payable recipient;
         address payable agent;
         TokenType tokenType;
-        bool shouldInvest;
         address tokenAddress;
         uint256 fund;
-        bool funded;
-        bool disputed;
-        bool finalized;
         mapping(address => bool) signer;
         mapping(address => Sign) signed;
         uint256 releaseCount;
         uint256 revertCount;
         uint256 lastTxBlock;
+        bool funded;
+        bool disputed;
+        bool finalized;
+        bool shouldInvest;
     }
 
     mapping(string => EscrowRecord) _escrow;
@@ -218,7 +221,7 @@ contract DFGlobalEscrow is Ownable {
         EscrowRecord storage e = _escrow[_referenceId];
         if (e.tokenType == TokenType.ETH) {
             require(
-                msg.value * (1 ether) == escrowFund,
+                (msg.value * ETH_MULTIPLIER) >= escrowFund,
                 "Must fund for exact ETH-amount in Escrow"
             );
         } else {
