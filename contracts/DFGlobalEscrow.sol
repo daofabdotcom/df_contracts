@@ -221,7 +221,7 @@ contract DFGlobalEscrow is Ownable {
         EscrowRecord storage e = _escrow[_referenceId];
         if (e.tokenType == TokenType.ETH) {
             require(
-                (msg.value * ETH_MULTIPLIER) >= escrowFund,
+                msg.value >= escrowFund,
                 "Must fund for exact ETH-amount in Escrow"
             );
         } else {
