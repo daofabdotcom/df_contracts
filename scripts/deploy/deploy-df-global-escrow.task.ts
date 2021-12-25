@@ -13,6 +13,11 @@ task("deploy-df-global-escrow", "Deploys a new dfGlobalEscrow contract")
   const dfGlobalEscrowContract = await hre.ethers.getContractFactory(`contracts/DFGlobalEscrow.sol:DFGlobalEscrow`);
   const dfGlobalEscrowContractInstance = await dfGlobalEscrowContract.deploy();
   await dfGlobalEscrowContractInstance.deployed();
+  
+  log.info(`for mainnet deployment: `)
+  log.info(`copy ${dfGlobalEscrowContractInstance.address} to constant dfGlobalEscrowAddress of scripts/deploy/config/contracts-mainnet.ts`);
 
-  log.info(`copy ${dfGlobalEscrowContractInstance.address} to constant dfGlobalEscrowAddress of scripts/deploy/config/deploy-config-global.ts`);
+  log.info(`for testnet deployment: `)
+  log.info(`copy ${dfGlobalEscrowContractInstance.address} to constant dfGlobalEscrowAddress of scripts/deploy/config/contracts-testnet.ts`);
+
 });
