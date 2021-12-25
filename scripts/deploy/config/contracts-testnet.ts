@@ -6,8 +6,8 @@ const contracts = {
         network: "polygonmumbai",
         chainId: 0,
         isTestnet: true,
-        deployerAddress: "0x9782968954A2948EB5A611235b7E3D227457DeC0", 
-        dfGlobalEscrowAddress: "0x369d514D287a05Cf644546D0dFd47444348a59c8"
+        deployerAddress: "", 
+        dfGlobalEscrowAddress: ""
     },
     "binance-testnet":{
         blockchainCode: "BSC",
