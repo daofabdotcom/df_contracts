@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DFGlobalEscrow is Ownable {
 
-    uint256 constant private ETH_MULTIPLIER = 10 ** 18;
-
     enum Sign {
         NULL,
         REVERT,
