@@ -44,6 +44,7 @@ ganache-cli -p 8545
 ```sh
 npx hardhat deploy-df-global-escrow --network development
 ```
+CMD Line Example:- npx hardhat deploy-df-global-escrow --network rinkeby 
 
 ## Test contracts:
 
@@ -66,10 +67,11 @@ npx hardhat test --network development
 ```sh
 npx hardhat test test/<fileName> --network development
 ```
+- To verify smart contract
 
+Amend config file in scripts\deploy\config (to contract address of deployment)
 
-
-
+CMD Line Example:- npx hardhat verify-df-global-escrow --network rinkeby
 
 //ETH
 Escrow(escrowaddress).methods.fund(_refernceId, 0.25*10^18);
