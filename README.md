@@ -1,4 +1,4 @@
-# Smart Contracts For LegalFAB
+# Smart Contracts For DAOFAB
 
 ## Build Instructions:
 
