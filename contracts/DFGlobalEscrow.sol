@@ -29,10 +29,10 @@ contract DFGlobalEscrow is Ownable {
         mapping(address => Sign) signed;
         uint256 releaseCount;
         uint256 revertCount;
-        uint256 lastTxBlock;
         bool funded;
         bool disputed;
         bool finalized;
+        uint256 withdrawnAmount;
         bool shouldInvest;
     }
 
@@ -59,34 +59,31 @@ contract DFGlobalEscrow is Ownable {
         address payer,
         uint256 amount,
         address payee,
-        address trustedParty,
-        uint256 lastBlock
+        address trustedParty
     );
 
     event Signature(
         string referenceId,
         address signer,
-        Sign action,
-        uint256 lastBlock
+        Sign action
     );
-    event Finalized(string referenceId, address winner, uint256 lastBlock);
-    event Disputed(string referenceId, address disputer, uint256 lastBlock);
+    event Finalized(string referenceId, address winner);
+    event Disputed(string referenceId, address disputer);
     event Withdrawn(
         string referenceId,
         address payee,
-        uint256 amount,
-        uint256 lastBlock
+        uint256 amount
     );
     event Funded(
         string indexed referenceId,
         address indexed owner,
-        uint256 amount,
-        uint256 lastBlock
+        uint256 amount
     );
 
     modifier multisigcheck(string memory _referenceId, address _party) {
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Escrow should not be finalized");
+        require(e.funded, "Escrow is not funded");
         require(e.signer[_party], "party should be eligible to sign");
         require(
             e.signed[_party] == Sign.NULL,
@@ -142,6 +139,11 @@ contract DFGlobalEscrow is Ownable {
         _;
     }
 
+    modifier onlyEscrowAgent(string memory _referenceId) {
+        require(_escrow[_referenceId].agent == msg.sender, "Only Escrow Agent can perform action");
+        _;
+    }
+
     modifier isFunded(string memory _referenceId) {
         require(
             _escrow[_referenceId].funded == true,
@@ -163,13 +165,13 @@ contract DFGlobalEscrow is Ownable {
         require(_owner != address(0), "Recipient should not be null");
         require(_recipient != address(0), "Recipient should not be null");
         require(_agent != address(0), "Trusted Agent should not be null");
-        require(_escrow[_referenceId].lastTxBlock == 0, "Duplicate Escrow");
+        require(_escrow[_referenceId].owner != address(0), "Duplicate Escrow");
 
         EscrowRecord storage e = _escrow[_referenceId];
         e.referenceId = _referenceId;
         e.owner = _owner;
 
-        if (!(e.owner == msg.sender)) {
+        if (e.owner != msg.sender) {
             e.delegator = payable(msg.sender);
         }
 
@@ -187,7 +189,6 @@ contract DFGlobalEscrow is Ownable {
 
         e.disputed = false;
         e.finalized = false;
-        e.lastTxBlock = block.number;
 
         e.releaseCount = 0;
         e.revertCount = 0;
@@ -201,8 +202,7 @@ contract DFGlobalEscrow is Ownable {
             _owner,
             e.fund,
             _recipient,
-            _agent,
-            block.number
+            _agent
         );
     }
 
@@ -212,27 +212,29 @@ contract DFGlobalEscrow is Ownable {
         onlyEscrowOwnerOrDelegator(_referenceId)
     {
         require(
-            _escrow[_referenceId].lastTxBlock > 0,
+            _escrow[_referenceId].owner != address(0),
             "Sender should not be null"
         );
         uint256 escrowFund = _escrow[_referenceId].fund;
         EscrowRecord storage e = _escrow[_referenceId];
+        require(!e.funded, "Escrow is already funded");
         if (e.tokenType == TokenType.ETH) {
             require(
-                msg.value >= escrowFund,
+                msg.value == escrowFund,
                 "Must fund for exact ETH-amount in Escrow"
             );
         } else {
+            require(msg.value == 0, "cannot accept ethers for erc20 token escrow");
             require(
                 fundAmount == escrowFund,
                 "Must fund for exact ERC20-amount in Escrow"
             );
             IERC20 erc20Instance = IERC20(e.tokenAddress);
-            erc20Instance.transferFrom(msg.sender, address(this), fundAmount);
+            erc20Instance.transferFrom(msg.sender, address(this), escrowFund);
         }
 
         e.funded = true;
-        emit Funded(_referenceId, e.owner, escrowFund, block.number);
+        emit Funded(_referenceId, msg.sender, escrowFund);
     }
 
     function release(string memory _referenceId, address _party)
@@ -244,12 +246,14 @@ contract DFGlobalEscrow is Ownable {
 
         require(
           _party == e.owner || _party == e.recipient || _party == e.agent,
-          "Only owner or recipient or agent can reverse an escrow"
+          "Only owner or recipient or agent can release an escrow"
         );
 
-        emit Signature(_referenceId, e.owner, Sign.RELEASE, e.lastTxBlock);
+        //if(_party == e.owner || _party == e.recipient) require(msg.sender == _party, "Party must be same as msg.sender");
 
-        e.signed[e.owner] = Sign.RELEASE;
+        emit Signature(_referenceId, _party, Sign.RELEASE);
+
+        e.signed[_party] = Sign.RELEASE;
         e.releaseCount++;
     }
 
@@ -265,9 +269,11 @@ contract DFGlobalEscrow is Ownable {
           "Only owner or recipient or agent can reverse an escrow"
         );
 
-        emit Signature(_referenceId, e.owner, Sign.REVERT, e.lastTxBlock);
+        //if(_party == e.owner || _party == e.recipient) require(msg.sender == _party, "Party must be same as msg.sender");
 
-        e.signed[e.owner] = Sign.REVERT;
+        emit Signature(_referenceId, _party, Sign.REVERT);
+
+        e.signed[_party] = Sign.REVERT;
         e.revertCount++;
     }
 
@@ -276,31 +282,36 @@ contract DFGlobalEscrow is Ownable {
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(!e.finalized, "Cannot dispute on a finalised Escrow");
+        require(e.funded, "Escrow is not funded");
         require(
             _party == e.owner || _party == e.recipient,
             "Only owner or recipient can dispute on escrow"
         );
 
+        //if(_party == e.owner || _party == e.recipient) require(msg.sender == _party, "Party must be same as msg.sender");
+
         dispute(e, _party);
+    }
+
+    function finalize(string memory _referenceId) public onlyEscrowAgent(_referenceId) {
+        finalize(_escrow[_referenceId]);
     }
 
     function transferOwnership(EscrowRecord storage e) internal {
         e.owner = e.recipient;
         finalize(e);
-        e.lastTxBlock = block.number;
     }
 
     function dispute(EscrowRecord storage e, address _party) internal
     {
-        emit Disputed(e.referenceId, _party, e.lastTxBlock);
+        emit Disputed(e.referenceId, _party);
         e.disputed = true;
-        e.lastTxBlock = block.number;
     }
 
     function finalize(EscrowRecord storage e) internal {
         require(!e.finalized, "Escrow should not be finalized");
 
-        emit Finalized(e.referenceId, e.owner, e.lastTxBlock);
+        emit Finalized(e.referenceId, e.owner);
 
         e.finalized = true;
     }
@@ -312,14 +323,13 @@ contract DFGlobalEscrow is Ownable {
     {
         EscrowRecord storage e = _escrow[_referenceId];
         require(e.finalized, "Escrow should be finalized before withdrawal");
-        require(_amount <= e.fund, "cannot withdraw more than the deposit");
+        require(e.withdrawnAmount + _amount <= e.fund, "cannot withdraw more than the deposit");
 
         address escrowOwner = e.owner;
 
-        emit Withdrawn(_referenceId, escrowOwner, _amount, e.lastTxBlock);
+        emit Withdrawn(_referenceId, escrowOwner, _amount);
 
-        e.fund = e.fund - _amount;
-        e.lastTxBlock = block.number;
+        e.withdrawnAmount = e.withdrawnAmount + _amount;
 
         if (e.tokenType == TokenType.ETH) {
             require((e.owner).send(_amount));

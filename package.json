@@ -7,7 +7,7 @@
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "build": "npx hardhat compile",
     "coverage": "npx hardhat coverage --testfiles 'test/*.js'",
-    "test": "npx truffle test",
+    "test": "npx hardhat test",
     "test-cov": "export RUNNING_COVERAGE=True && truffle run coverage --network=development",
     "slither": "slither . --disable-color --print human-summary > slither-output.txt 2>&1"
   },

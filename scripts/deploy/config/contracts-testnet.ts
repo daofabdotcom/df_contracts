@@ -1,13 +1,13 @@
 const environment = "test";
 
 const contracts = {
-    "polygonmumbai":{
+    "mumbai":{
         blockchainCode: "POLYGON",
-        network: "polygonmumbai",
-        chainId: 0,
+        network: "mumbai",
+        chainId: 80001,
         isTestnet: true,
         deployerAddress: "", 
-        dfGlobalEscrowAddress: ""
+        dfGlobalEscrowAddress: "0x4a8501d6eEB1bf2B3e4E8AdcB1b624c0CEb4a0f1"
     },
     "binance-testnet":{
         blockchainCode: "BSC",
