@@ -37,7 +37,7 @@ const config: HardhatUserConfig = {
     // },
     mumbai: {
       url: `https://rpc-mumbai.maticvigil.com/`,
-      accounts: [``,``],
+      accounts: [],
       gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
       gas: 25e6,
       gasMultiplier: 10,
