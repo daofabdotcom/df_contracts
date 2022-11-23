@@ -67,6 +67,12 @@ npx hardhat test --network development
 ```sh
 npx hardhat test test/<fileName> --network development
 ```
+
+- To run unit test 
+npm install
+npx hardhat test
+npx hardhat test —network <network name>
+
 - To verify smart contract
 
 Amend config file in scripts\deploy\config (to contract address of deployment)
