@@ -26,19 +26,19 @@ const config: HardhatUserConfig = {
     development: {
       url: "http://127.0.0.1:8545"
     },
-    // rinkeby: {
-    //   url: `https://rinkeby.infura.io/v3/${INFURA_PROJECT_ID}`,
-    //   accounts: [`0x${DEPLOYER_PRIVATE_KEY}`],
-    //   gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
-    //   gas: 25e6,
-    //   gasMultiplier: 10,
-    //   allowUnlimitedContractSize: true,
-    //   blockGasLimit: 0x1fffffffffffff,
-    // },
+    goerli: {
+      url: `https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161`,
+      accounts: [""],
+      //gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
+      gas: 25e6,
+      gasMultiplier: 10,
+      allowUnlimitedContractSize: true,
+      blockGasLimit: 0x1fffffffffffff,
+    },
     mumbai: {
       url: `https://rpc-mumbai.maticvigil.com/`,
-      accounts: [],
-      gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
+      accounts: [""],
+      //gasPrice: ethers.utils.parseUnits("20", "gwei").toNumber(),
       gas: 25e6,
       gasMultiplier: 10,
       allowUnlimitedContractSize: true,
