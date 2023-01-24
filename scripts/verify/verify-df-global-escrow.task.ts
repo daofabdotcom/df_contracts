@@ -17,8 +17,8 @@ task("verify-df-global-escrow", "Verify the dfGlobalEscrow contract on Polygon S
     const contractDetails: contractInfo = contracts[hre.network.name];
     const dfGlobalEscrowAddress = contractDetails.dfGlobalEscrowAddress;
     log.info(`verifying dfGlobalEscrowAddress: ${dfGlobalEscrowAddress} on network: ${hre.network.name}`);
-    assert(ethers.utils.getAddress(dfGlobalEscrowAddress) == dfGlobalEscrowAddress, "Cannot validate Invalid dfGlobalEscrowAddress");
-
+    assert(ethers.utils.getAddress(dfGlobalEscrowAddress).toLowerCase() == dfGlobalEscrowAddress.toLowerCase(), "Cannot validate Invalid dfGlobalEscrowAddress");
+    
     await hre.run("verify:verify", {
         address: dfGlobalEscrowAddress
     });

@@ -1,1 +1,1 @@
-export const network = "rinkeby";
+export const network = "goerli";
